@@ -28,6 +28,10 @@ create_sol_binding!(
     ephemeralgetpopulatedticksinrange,
     EphemeralGetPopulatedTicksInRange
 );
+create_sol_binding!(
+    ephemeralgetpopulatedticksinrangebatched,
+    EphemeralGetPopulatedTicksInRangeBatched
+);
 create_sol_binding!(ephemeralgetposition, EphemeralGetPosition);
 create_sol_binding!(ephemeralgetpositions, EphemeralGetPositions);
 create_sol_binding!(ephemeralpoolpositions, EphemeralPoolPositions);

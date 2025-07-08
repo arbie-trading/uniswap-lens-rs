@@ -11,6 +11,13 @@ use crate::{
             },
             PoolUtils::PopulatedTick,
         },
+        ephemeralgetpopulatedticksinrangebatched::{
+            EphemeralGetPopulatedTicksInRangeBatched,
+            EphemeralGetPopulatedTicksInRangeBatched::{
+                getPopulatedTicksInRangeBatchedCall, getPopulatedTicksInRangeBatchedReturn,
+            },
+            PoolUtils::PopulatedTick as BatchedPopulatedTick,
+        },
         ephemeralpoolpositions::{EphemeralPoolPositions, PoolUtils::PositionKey},
         ephemeralpoolslots::{
             EphemeralPoolSlots, EphemeralPoolSlots::getSlotsCall, PoolUtils::Slot,
@@ -70,6 +77,59 @@ where
                 .collect(),
             tickSpacing,
         )),
+        Err(err) => Err(err),
+    }
+}
+
+/// Get the populated ticks in a tick range with batching support for low gas limit chains.
+///
+/// ## Arguments
+///
+/// * `pool`: The address of a V3 pool
+/// * `tick_lower`: The lower tick boundary
+/// * `tick_upper`: The upper tick boundary
+/// * `max_ticks`: Maximum number of ticks to return in this batch
+/// * `provider`: The alloy provider
+/// * `block_id`: Optional block number to query
+///
+/// ## Returns
+///
+/// A tuple containing:
+/// - A vector of populated ticks within the range (up to max_ticks)
+/// - The tick spacing of the pool
+/// - A boolean indicating if there are more ticks beyond the limit
+/// - The next tick to start from for the next batch (if has_more is true)
+#[inline]
+pub async fn get_populated_ticks_in_range_batched<N, P>(
+    pool: Address,
+    tick_lower: I24,
+    tick_upper: I24,
+    max_ticks: u64,
+    provider: P,
+    block_id: Option<BlockId>,
+) -> Result<(Vec<BatchedPopulatedTick>, I24, bool, I24), Error>
+where
+    N: Network,
+    P: Provider<N>,
+{
+    let deploy_builder = EphemeralGetPopulatedTicksInRangeBatched::deploy_builder(
+        provider,
+        pool,
+        tick_lower,
+        tick_upper,
+        alloy::primitives::U256::from(max_ticks),
+    );
+    match call_ephemeral_contract!(
+        deploy_builder,
+        getPopulatedTicksInRangeBatchedCall,
+        block_id
+    ) {
+        Ok(getPopulatedTicksInRangeBatchedReturn {
+            populatedTicks,
+            tickSpacing,
+            hasMore,
+            nextStartTick,
+        }) => Ok((populatedTicks, tickSpacing, hasMore, nextStartTick)),
         Err(err) => Err(err),
     }
 }
